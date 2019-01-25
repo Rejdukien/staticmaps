@@ -36,6 +36,10 @@ class StaticMaps {
     this.tileRequestTimeout = this.options.tileRequestTimeout;
     this.tileRequestHeader = this.options.tileRequestHeader;
     this.reverseY = this.options.reverseY || false;
+    this.lonToX = this.options.lonToX || lonToX;
+    this.latToY = this.options.latToY || latToY;
+    this.yToLat = this.options.yToLat || yToLat;
+    this.xToLon = this.options.xToLon || xToLon;
 
     // # features
     this.markers = [];
@@ -73,8 +77,8 @@ class StaticMaps {
     this.zoom = zoom || this.calculateZoom();
 
     if (center && center.length === 2) {
-      this.centerX = lonToX(center[0], this.zoom);
-      this.centerY = latToY(center[1], this.zoom);
+      this.centerX = this.lonToX(center[0], this.zoom);
+      this.centerY = this.latToY(center[1], this.zoom);
     } else {
       // # get extent of all lines
       const extent = this.determineExtent(this.zoom);
@@ -83,8 +87,8 @@ class StaticMaps {
       const centerLon = (extent[0] + extent[2]) / 2;
       const centerLat = (extent[1] + extent[3]) / 2;
 
-      this.centerX = lonToX(centerLon, this.zoom);
-      this.centerY = latToY(centerLat, this.zoom);
+      this.centerX = this.lonToX(centerLon, this.zoom);
+      this.centerY = this.latToY(centerLat, this.zoom);
     }
 
     this.image = new Image(this.options);
@@ -126,14 +130,14 @@ class StaticMaps {
 
       // # consider dimension of marker
       const ePx = marker.extentPx();
-      const x = lonToX(e[0], zoom);
-      const y = latToY(e[1], zoom);
+      const x = this.lonToX(e[0], zoom);
+      const y = this.latToY(e[1], zoom);
 
       extents.push([
-        xToLon(x - parseFloat(ePx[0]) / this.tileSize, zoom),
-        yToLat(y + parseFloat(ePx[1]) / this.tileSize, zoom),
-        xToLon(x + parseFloat(ePx[2]) / this.tileSize, zoom),
-        yToLat(y - parseFloat(ePx[3]) / this.tileSize, zoom),
+        this.xToLon(x - parseFloat(ePx[0]) / this.tileSize, zoom),
+        this.yToLat(y + parseFloat(ePx[1]) / this.tileSize, zoom),
+        this.xToLon(x + parseFloat(ePx[2]) / this.tileSize, zoom),
+        this.yToLat(y - parseFloat(ePx[3]) / this.tileSize, zoom),
       ]);
     }
 
@@ -151,10 +155,10 @@ class StaticMaps {
   calculateZoom() {
     for (let z = 17; z > 0; z--) {
       const extent = this.determineExtent(z);
-      const width = (lonToX(extent[2], z) - lonToX(extent[0], z)) * this.tileSize;
+      const width = (this.lonToX(extent[2], z) - this.lonToX(extent[0], z)) * this.tileSize;
       if (width > (this.width - (this.padding[0] * 2))) continue;
 
-      const height = (latToY(extent[1], z) - latToY(extent[3], z)) * this.tileSize;
+      const height = (this.latToY(extent[1], z) - this.latToY(extent[3], z)) * this.tileSize;
       if (height > (this.height - (this.padding[1] * 2))) continue;
 
       return z;
@@ -248,8 +252,8 @@ class StaticMaps {
     const baseImage = sharp(this.image.image);
     return new Promise((resolve, reject) => {
       const points = line.coords.map(coord => [
-        this.xToPx(lonToX(coord[0], this.zoom)),
-        this.yToPx(latToY(coord[1], this.zoom)),
+        this.xToPx(this.lonToX(coord[0], this.zoom)),
+        this.yToPx(this.latToY(coord[1], this.zoom)),
       ]);
 
       baseImage
@@ -334,8 +338,8 @@ class StaticMaps {
           this.markers.forEach((mark) => {
             const marker = mark;
             marker.position = [
-              this.xToPx(lonToX(marker.coord[0], this.zoom)) - marker.offset[0],
-              this.yToPx(latToY(marker.coord[1], this.zoom)) - marker.offset[1],
+              this.xToPx(this.lonToX(marker.coord[0], this.zoom)) - marker.offset[0],
+              this.yToPx(this.latToY(marker.coord[1], this.zoom)) - marker.offset[1],
             ];
             const imgData = find(icons, { file: marker.img });
             marker.set(imgData.data);
